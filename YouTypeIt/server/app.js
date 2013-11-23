@@ -25,7 +25,7 @@ var reScript = new RegExp('^\/script.js$','i');
 
 // setup for  API requests
 var cjHeaders = {
-    'Content-type' : 'application/json' //vnd.collection+json'
+    'Content-Type' : 'application/vnd.collection+json'
 };
 var reAPIList = new RegExp('^\/api\/$', 'i');
 var reAPIItem = new RegExp('^\/api\/.*', 'i');
@@ -107,7 +107,7 @@ function handler(req, res) {
             sendHtmlError(req, res, 'Method Not Allowed', 405);
         }
     }
-    
+
     // API List
     if(flg===false && reAPIList.test(req.url)) {
         flg=true;
@@ -123,7 +123,7 @@ function handler(req, res) {
                 break;
         }
     }
-    
+
     // API Item
     if(flg===false && reAPIItem.test(req.url)) {
         flg=true;
@@ -142,7 +142,7 @@ function handler(req, res) {
                 break;
         }
     }
-    
+
     // not found
     if(flg===false) {
         sendHtmlError(req, res, 'Page Not Found', 404);
@@ -231,7 +231,7 @@ function postHtmlItem(req, res) {
 
 function sendScript(req, res) {
     var t;
-  
+
     try {
         t = templates('script.js');
         t = t.replace(/{@host}/g, root);
@@ -241,7 +241,7 @@ function sendScript(req, res) {
     catch (ex) {
         sendHtmlError(req, res, 'Server Error', 500);
     }
-  
+
 }
 
 function sendAPIList(req, res) {
@@ -251,11 +251,11 @@ function sendAPIList(req, res) {
         rtn = messages('list');
         list = rtn.list;
         lmDate = rtn.lastDate;
-        
+
         t = templates('collection.js');
         t = t.replace(/{@host}/g, root);
         t = t.replace(/{@list}/g, formatAPIList(list));
-        
+
         sendAPIResponse(req, res, t, 200, new Date(lmDate).toGMTString());
     }
     catch (ex) {
@@ -274,7 +274,7 @@ function sendAPIItem(req, res, id) {
         t = templates('collection.js');
         t = t.replace(/{@host}/g, root);
         t = t.replace(/{@list}/g, formatAPIItem(item));
-        
+
         sendAPIResponse(req, res, t, 200, new Date(lmDate).toGMTString());
     }
     catch(ex) {
@@ -399,7 +399,7 @@ function sendHtmlError(req, res, title, code) {
 }
 
 function sendHtmlResponse(req, res, body, code, lmDate) {
-    res.writeHead(code, 
+    res.writeHead(code,
             {'Content-Type' : 'text/html',
             'ETag' : generateETag(body),
             'Last-Modified' : lmDate});
@@ -407,8 +407,14 @@ function sendHtmlResponse(req, res, body, code, lmDate) {
 }
 
 function sendAPIResponse(req, res, body, code, lmDate) {
-    res.writeHead(code, 
-        {"Content-Type" : "application/json", 
+    var ct;
+    if (req.headers.accept === 'application/vnd.collection+json') {
+      ct = req.headers.accept;
+    } else {
+      ct = 'application/json';
+    }
+    res.writeHead(code,
+        {"Content-Type" : ct,
         "ETag" : generateETag(body),
         "Last-Modified" : lmDate});
     res.end(body);
@@ -439,4 +445,3 @@ function generateETag(data) {
 
 // register listener for requests
 http.createServer(handler).listen(port);
-
